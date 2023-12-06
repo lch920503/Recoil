@@ -1,46 +1,57 @@
-# Getting Started with Create React App
+# 리액트 전역 상태관리 recoil
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+<b>특징</b>
 
-## Available Scripts
+1. bottom up 방식
+2. recoil로 선언한 state가 업데이트 될 경우, 해당 요소만 리렌더링이 일어남
+3. recoil로 state가 연결되기 때문에 무분별한 사용은 예상하지 못한 에러를 발생 시킬 수 있음.
+4. 비동기 처리도 가능 (selector 이용)
 
-In the project directory, you can run:
+## atom 사용하기
 
-### `npm start`
+1. 동기적 처리 방식
+2. key와 default로 구성되어 있음
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- key는 atom의 고유값
+- default는 초기값
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+3. 불필요한 atom 사용은 데이터와 최적화에 좋지 않음
 
-### `npm test`
+```tsx
+export interface ITodo {
+  id: number;
+  text: string;
+  category: "TODO" | "DOING" | "DONE";
+}
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+export const todoState = atom<ITodo[]>({
+  key: "todoState",
+  default: [],
+});
 
-### `npm run build`
+export const categoryState = atom({
+  key: "categoryState",
+  default: "TODO",
+});
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## selector 사용하기
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. atom이나 다른 selector를 입력받아서 처리
+2. atom처럼 update가 발생하면 해당 요소가 리렌더링됨
+3. selector에 정의한 함수를 이용해 불필요한 상태관리를 정리할 수 있음  
+   ex) A, B, C, D > C만 호출 / A, B, C는 호출하지 않음
+4. 비동기적 처리 방식
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+```tsx
+export cont todoSelector = selector({
+	key: 'todoSelector',
+	get: ({ get }) => {
+		const todoList = get(todoState); // 입력받을 항목
+		const category = get(categoryState);
+		if(category === "TODO") return todoList.filter((todo) => todo.category === "TODO");
+		if(category === "DOING") return todoList.filter((todo) => todo.category === "DOING");
+		if(category === "DONE") return todoList.filter((todo) => todo.category === "DONE")
+	},
+});
+```
